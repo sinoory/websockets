@@ -6,14 +6,15 @@
 #  cmake .. -DCMAKE_TOOLCHAIN_FILE=../cross-arm-linux-gnueabihf.cmake
 #
 
-set(CROSS_PATH /opt/gcc-linaro-arm-linux-gnueabihf-4.7-2013.02-01-20130221_linux)
+#set(CROSS_PATH /opt/gcc-linaro-arm-linux-gnueabihf-4.7-2013.02-01-20130221_linux)
+set(CROSS_PATH /opt/sdk/mstar/msd6486/toolchain/arm)
 
 # Target operating system name.
 set(CMAKE_SYSTEM_NAME Linux)
 
 # Name of C compiler.
-set(CMAKE_C_COMPILER "${CROSS_PATH}/bin/arm-linux-gnueabihf-gcc")
-set(CMAKE_CXX_COMPILER "${CROSS_PATH}/bin/arm-linux-gnueabihf-g++")
+set(CMAKE_C_COMPILER "${CROSS_PATH}/bin/arm-none-linux-gnueabi-gcc")
+set(CMAKE_CXX_COMPILER "${CROSS_PATH}/bin/arm-none-linux-gnueabi-g++")
 
 # Where to look for the target environment. (More paths can be added here)
 set(CMAKE_FIND_ROOT_PATH "${CROSS_PATH}")

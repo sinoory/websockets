@@ -1,0 +1,1 @@
+cmake .. -DCMAKE_INSTALL_PREFIX:PATH=/usr -DCMAKE_TOOLCHAIN_FILE=../cross-arm-linux-gnueabihf.cmake -DWITHOUT_EXTENSIONS=1 -DWITH_SSL=0
