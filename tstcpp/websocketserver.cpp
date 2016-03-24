@@ -1,23 +1,3 @@
-/*
- * libwebsockets-test-echo
- *
- * Copyright (C) 2010-2016 Andy Green <andy@warmcat.com>
- *
- * This file is made available under the Creative Commons CC0 1.0
- * Universal Public Domain Dedication.
- *
- * The person who associated a work with this deed has dedicated
- * the work to the public domain by waiving all of his or her rights
- * to the work worldwide under copyright law, including all related
- * and neighboring rights, to the extent allowed by law. You can copy,
- * modify, distribute and perform the work, even for commercial purposes,
- * all without asking permission.
- *
- * The test apps are intended to be adapted for use in your code, which
- * may be proprietary.  So unlike the library itself, they are licensed
- * Public Domain.
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
@@ -25,7 +5,6 @@
 #include <assert.h>
 #include <signal.h>
 
-#include "../lib/libwebsockets.h"
 
 
 #ifndef _WIN32
@@ -37,27 +16,16 @@
 #include <process.h>
 #endif
 
+#include "websocketserver.h"
+
 static volatile int force_exit = 0;
 static int versa, state;
 
-#define INSTALL_DATADIR ""
-#define LOCAL_RESOURCE_PATH INSTALL_DATADIR"/libwebsockets-test-server"
 
-#define MAX_ECHO_PAYLOAD 1024
-
-struct per_session_data__echo {
-	size_t rx, tx;
-	unsigned char buf[LWS_PRE + MAX_ECHO_PAYLOAD];
-	unsigned int len;
-	unsigned int index;
-	int final;
-	int continuation;
-	int binary;
-};
+static Client* _client=0;//new Client();
 
 //TODO:
 //1.server fd
-//2.clients fd,ip
 //3.client request ws://xxx..xxx/xxx
 static int
 callback_echo(struct lws *wsi, enum lws_callback_reasons reason, void *user,
@@ -66,14 +34,14 @@ callback_echo(struct lws *wsi, enum lws_callback_reasons reason, void *user,
 	struct per_session_data__echo *pss =
 			(struct per_session_data__echo *)user;
 	int n;
-
+    _client->setWsi(wsi);
+    _client->setSessionData(pss);
     if(reason != 31){
-    lwsl_notice("callback_echo reason=%2d\n",reason);
+    lwsl_notice("callback_echo reason=%2d wsi=%p pss=%p\n",reason,wsi,pss);
     }
-    char* msg="this is server msg";
+    const char* msg="this is server msg";
 	switch (reason) {
 
-#ifndef LWS_NO_SERVER
     //client establish
     case LWS_CALLBACK_FILTER_NETWORK_CONNECTION:
         //lwsl_notice("net connect fd=%d\n",wsi->sock);
@@ -100,9 +68,12 @@ callback_echo(struct lws *wsi, enum lws_callback_reasons reason, void *user,
 
 	case LWS_CALLBACK_SERVER_WRITEABLE:
 do_tx:
-		memcpy(&pss->buf[LWS_PRE],msg, strlen(msg));
-        pss->len=strlen(msg);
+		//memcpy(&pss->buf[LWS_PRE],msg, strlen(msg));
+        //pss->len=strlen(msg);
 
+        if(pss->len==0){
+            break;
+        }
 		n = LWS_WRITE_CONTINUATION;
 		if (!pss->continuation) {
 			if (pss->binary)
@@ -141,63 +112,23 @@ do_rx:
 			  len, pss->final, (int)pss->len);
 
 		memcpy(&pss->buf[LWS_PRE], in, len);
-		//assert((int)pss->len == -1);
-		pss->len = (unsigned int)len;
+		pss->len = 0;//(unsigned int)len;
 		pss->rx += len;
+        _client->onMessage(&pss->buf[LWS_PRE],len);
 
 		lws_rx_flow_control(wsi, 0);
 		lws_callback_on_writable(wsi);
 		break;
-#endif
-
-#ifndef LWS_NO_CLIENT
-	/* when the callback is used for client operations --> */
 
 	case LWS_CALLBACK_CLOSED:
+        _client->onClose();
+		state = 0;
+		break;
 	case LWS_CALLBACK_CLIENT_CONNECTION_ERROR:
-		lwsl_notice("closed\n");
+		lwsl_notice("closed 2\n");
 		state = 0;
 		break;
 
-	case LWS_CALLBACK_CLIENT_ESTABLISHED:
-		lwsl_notice("Client has connected\n");
-		pss->index = 0;
-		pss->len = -1;
-		state = 2;
-		break;
-
-	case LWS_CALLBACK_CLIENT_RECEIVE:
-#ifndef LWS_NO_SERVER
-		if (versa)
-			goto do_rx;
-#endif
-		lwsl_notice("Client RX: %s", (char *)in);
-		break;
-
-	case LWS_CALLBACK_CLIENT_WRITEABLE:
-#ifndef LWS_NO_SERVER
-		if (versa) {
-			if (pss->len != (unsigned int)-1)
-				goto do_tx;
-			break;
-		}
-#endif
-		/* we will send our packet... */
-		pss->len = sprintf((char *)&pss->buf[LWS_PRE],
-				   "hello from libwebsockets-test-echo client pid %d index %d\n",
-				   getpid(), pss->index++);
-		lwsl_notice("Client TX: %s", &pss->buf[LWS_PRE]);
-		n = lws_write(wsi, &pss->buf[LWS_PRE], pss->len, LWS_WRITE_TEXT);
-		if (n < 0) {
-			lwsl_err("ERROR %d writing to socket, hanging up\n", n);
-			return -1;
-		}
-		if (n < (int)pss->len) {
-			lwsl_err("Partial write\n");
-			return -1;
-		}
-		break;
-#endif
 	case LWS_CALLBACK_CLIENT_CONFIRM_EXTENSION_SUPPORTED:
 		/* reject everything else except permessage-deflate */
 		if (strcmp((char*)in, "permessage-deflate"))
@@ -234,42 +165,23 @@ void sighandler(int sig)
 }
 
 
-int main(int argc, char **argv)
+int startWebSocketServer(int port,Client* client )
 {
+    _client=client;
 	int n = 0;
-	int port = 7681;
 	int use_ssl = 0;
 	struct lws_context *context;
 	int opts = 0;
 	const char *_interface = NULL;
-	char ssl_cert[256] = LOCAL_RESOURCE_PATH"/libwebsockets-test-server.pem";
-	char ssl_key[256] = LOCAL_RESOURCE_PATH"/libwebsockets-test-server.key.pem";
-#ifndef _WIN32
 	int syslog_options = LOG_PID | LOG_PERROR;
-#endif
-	int client = 0;
+
 	int listen_port = 80;
 	struct lws_context_creation_info info;
 
 	int debug_level = 7;
-#ifndef LWS_NO_DAEMONIZE
-	int daemonize = 0;
-#endif
-
 	memset(&info, 0, sizeof info);
 
 
-#ifndef LWS_NO_DAEMONIZE
-	/*
-	 * normally lock path would be /var/lock/lwsts or similar, to
-	 * simplify getting started without having to take care about
-	 * permissions or running as root, set to /tmp/.lwsts-lock
-	 */
-	if (!client && daemonize && lws_daemonize("/tmp/.lwstecho-lock")) {
-		fprintf(stderr, "Failed to daemonize\n");
-		return 1;
-	}
-#endif
 
 	/* we will only try to log things according to our debug_level */
 	setlogmask(LOG_UPTO (LOG_DEBUG));
@@ -286,20 +198,9 @@ int main(int argc, char **argv)
 	info.port = listen_port;
 	info.iface = _interface;
 	info.protocols = protocols;
-	if (use_ssl && !client) {
-		info.ssl_cert_filepath = ssl_cert;
-		info.ssl_private_key_filepath = ssl_key;
-	} else
-		if (use_ssl && client) {
-			info.ssl_cert_filepath = NULL;
-			info.ssl_private_key_filepath = NULL;
-		}
 	info.gid = -1;
 	info.uid = -1;
 	info.options = opts | LWS_SERVER_OPTION_VALIDATE_UTF8;
-#ifndef LWS_NO_EXTENSIONS
-	info.extensions = exts;
-#endif
 
 	context = lws_create_context(&info);
 	if (context == NULL) {
@@ -321,3 +222,4 @@ int main(int argc, char **argv)
 
 	return 0;
 }
+

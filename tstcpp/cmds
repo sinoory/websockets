@@ -1,1 +1,2 @@
 g++ websocketserver.cpp -lwebsockets -L../build/lib/
+g++ tst/tstserver.cpp -lwebsockets -L../build/lib/
