@@ -1040,6 +1040,7 @@ if (NOT LWS_WITHOUT_TESTAPPS)
 		if (NOT LWS_WITHOUT_TEST_ECHO)
 			create_test_app(test-echo "test-server/test-echo.c" "" "" "" "" "")
 		endif()
+		create_test_app(websocketserver "test-server/websocket-server.c" "" "" "" "" "")
 
 	endif(NOT LWS_WITHOUT_CLIENT)
 
