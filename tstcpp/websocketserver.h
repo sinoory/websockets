@@ -17,12 +17,18 @@ struct per_session_data__echo {
 
 class Client{
     public:
+    //triggled when client connected to server
+    //TODO:enable sendMessage in onConnect()
+    virtual void onConnect(){};
     virtual void onMessage(unsigned char*msg,int len){};
     virtual void onClose(){};
 
     void sendMessage(char* msg,int len){
-		memcpy(&mCurrentSessionData->buf[LWS_PRE],msg, len);
-        mCurrentSessionData->len=len;
+        lws_write(mCurrentWsi,(unsigned char*)msg,len,LWS_WRITE_TEXT);
+    }
+
+    void sendMessage(char* msg,int len,struct lws* lws){
+        lws_write(lws,(unsigned char*)msg,len,LWS_WRITE_TEXT);
     }
     int getCurrentFd(){
         return lws_get_socket_fd(mCurrentWsi);
@@ -36,9 +42,12 @@ class Client{
 
     void setWsi(struct lws* wsi){mCurrentWsi=wsi;}
     void setSessionData(per_session_data__echo* pss){mCurrentSessionData=pss;}
-    private:
+    void setServerFd(int fd){mServerFd=fd;}
+    int getServerFd(){return mServerFd;}
+
     struct lws* mCurrentWsi;
     struct per_session_data__echo* mCurrentSessionData; 
+    int mServerFd;
 };
 
 

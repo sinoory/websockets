@@ -38,3 +38,6 @@ ar-lib
 libwebsockets.pc
 build/
 *.sw*
+cscope.*
+tags
+tstcpp/a.out

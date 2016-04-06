@@ -43,16 +43,40 @@ callback_echo(struct lws *wsi, enum lws_callback_reasons reason, void *user,
 	switch (reason) {
 
     //client establish
-    case LWS_CALLBACK_FILTER_NETWORK_CONNECTION:
-        //lwsl_notice("net connect fd=%d\n",wsi->sock);
+    case LWS_CALLBACK_FILTER_NETWORK_CONNECTION://get server fd
+        lwsl_notice("client requ, server fd=%d\n",lws_get_socket_fd(wsi));
+        _client->setServerFd(lws_get_socket_fd(wsi));
+        break;
+    case LWS_CALLBACK_CLIENT_FILTER_PRE_ESTABLISH:
+        lwsl_notice("===CLIENT_FILTER_PRE_ESTABLISH here url?==\n");
         break;
     case LWS_CALLBACK_WSI_CREATE:
-        //lwsl_notice("create fd=%d\n",wsi->sock);
+        lwsl_notice("create LWS_CALLBACK_WSI_CREATE=%d\n",lws_get_socket_fd(wsi));
         break;
     case LWS_CALLBACK_SERVER_NEW_CLIENT_INSTANTIATED:
+        lwsl_notice("net connect2 fd=%d\n",lws_get_socket_fd(wsi));
+        //_client->onConnect();
         //lwsl_notice("LWS_CALLBACK_SERVER_NEW_CLIENT_INSTANTIATED fd=%d\n",wsi->sock);
         break;
+    case LWS_CALLBACK_FILTER_HTTP_CONNECTION:
+        char buf[50];
+        memcpy(buf,in,len);
+        lwsl_notice("client request url=%s\n",buf);
+        break;
+    case LWS_CALLBACK_PROTOCOL_INIT:
+        lwsl_notice("net server fd=%d\n",lws_get_socket_fd(wsi));
+        break;
+    case LWS_CALLBACK_FILTER_PROTOCOL_CONNECTION:
+        lwsl_notice("net client connet fd=%d\n",lws_get_socket_fd(wsi));
+        _client->onConnect();
+        break;
     case LWS_CALLBACK_ADD_POLL_FD:
+        lwsl_notice("net add fd=%d,client->serverfd=%d\n",lws_get_socket_fd(wsi),_client->getServerFd());
+        if(_client->getServerFd()==0){
+            _client->setServerFd(lws_get_socket_fd(wsi));
+        }else{//this is the client fd
+            //_client->onConnect();
+        }
         break;
     case LWS_CALLBACK_ESTABLISHED:
         break;

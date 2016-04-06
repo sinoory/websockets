@@ -106,7 +106,7 @@ do_rx:
 			  len, pss->final, (int)pss->len);
 
 		memcpy(&pss->buf[LWS_PRE], in, len);
-		assert((int)pss->len == -1);
+		//assert((int)pss->len == -1);
 		pss->len = (unsigned int)len;
 		pss->rx += len;
 
