@@ -17,6 +17,7 @@
 #endif
 
 #include "websocketserver.h"
+#include "../lib/private-libwebsockets.h"
 
 static volatile int force_exit = 0;
 static int versa, state;
@@ -67,7 +68,7 @@ callback_echo(struct lws *wsi, enum lws_callback_reasons reason, void *user,
         lwsl_notice("net server fd=%d\n",lws_get_socket_fd(wsi));
         break;
     case LWS_CALLBACK_FILTER_PROTOCOL_CONNECTION:
-        lwsl_notice("net client connet fd=%d\n",lws_get_socket_fd(wsi));
+        lwsl_notice("net client connet fd=%d url=%s\n",lws_get_socket_fd(wsi),lws_hdr_simple_ptr(wsi, WSI_TOKEN_GET_URI));
         _client->onConnect();
         break;
     case LWS_CALLBACK_ADD_POLL_FD:

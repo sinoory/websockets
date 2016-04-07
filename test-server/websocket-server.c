@@ -78,13 +78,16 @@ callback_echo(struct lws *wsi, enum lws_callback_reasons reason, void *user,
 #ifndef LWS_NO_SERVER
     //client establish
     case LWS_CALLBACK_FILTER_NETWORK_CONNECTION:
-        lwsl_notice("net connect fd=%d\n",wsi->sock);
+        //lwsl_notice("net connect fd=%d url=%s\n",wsi->sock,lws_hdr_simple_ptr(wsi, WSI_TOKEN_GET_URI));
         break;
     case LWS_CALLBACK_WSI_CREATE:
         lwsl_notice("create fd=%d\n",wsi->sock);
         break;
     case LWS_CALLBACK_SERVER_NEW_CLIENT_INSTANTIATED:
         lwsl_notice("LWS_CALLBACK_SERVER_NEW_CLIENT_INSTANTIATED fd=%d\n",wsi->sock);
+        break;
+    case LWS_CALLBACK_FILTER_PROTOCOL_CONNECTION:
+        lwsl_notice("net connect fd=%d url=%s\n",wsi->sock,lws_hdr_simple_ptr(wsi, WSI_TOKEN_GET_URI));
         break;
     case LWS_CALLBACK_ADD_POLL_FD:
         break;

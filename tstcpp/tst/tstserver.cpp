@@ -40,6 +40,6 @@ class MultyClient: public Client{
 };
 
 int main(){
-    startWebSocketServer(8999,new MultyClient());
+    startWebSocketServer(7681,new MultyClient());
     return 0;
 }
