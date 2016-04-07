@@ -39,9 +39,6 @@ class Client{
                                sizeof(name), ipbuf, buflen);
         return 0;
     }
-    char* getUrl(){
-        return lws_hdr_simple_ptr(mCurrentWsi, WSI_TOKEN_GET_URI);
-    }
 
     void setWsi(struct lws* wsi){mCurrentWsi=wsi;}
     void setSessionData(per_session_data__echo* pss){mCurrentSessionData=pss;}

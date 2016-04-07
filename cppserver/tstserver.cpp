@@ -5,7 +5,7 @@ using namespace std;
 class MultyClient: public Client{
     public:
     virtual void onConnect(){
-        printf("----client onConnect fd=%d url=%s\n",getCurrentFd(),getUrl());
+        printf("----client onConnect fd=%d\n",getCurrentFd());
 	    char buf[50];
         sprintf(buf,"onConne welcome ,client %d\n",getCurrentFd());
         sendMessage(buf,strlen(buf));

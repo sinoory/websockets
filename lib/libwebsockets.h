@@ -1449,6 +1449,10 @@ struct lws_client_connect_info {
 	void *_unused[4];
 };
 
+LWS_VISIBLE 
+LWS_EXTERN char * LWS_WARN_UNUSED_RESULT
+lws_hdr_simple_ptr(struct lws *wsi, enum lws_token_indexes h);
+
 LWS_VISIBLE LWS_EXTERN void
 lws_set_log_level(int level,
 		  void (*log_emit_function)(int level, const char *line));
